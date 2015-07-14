@@ -1,0 +1,104 @@
+<wizard>
+	<step id="settingsquestion">
+		<condition>
+from Components.Harddisk import harddiskmanager
+from Plugins.SystemPlugins.StorageDevicesWizard.StorageDevicesWizard import checkSwapEnable
+self.sdCount = harddiskmanager.HDDCount()
+self.swapEnable = checkSwapEnable()
+self.condition = ((self.sdCount != 0 and config.misc.firstrun.value and config.usage.config_current_sd.value == '') or not self.swapEnable)
+		</condition>
+		<text value="WARNING!\nFor normal operation required to activate the swap file!\nWithout this condition, the software will not work consistently!\nFor correct operation of your media center, you must assign a hard disk or any other device as a static storage HDD device!" />
+		<list>
+			<listentry caption="Yes, configure storage devices currently" step="selectstorage" />
+			<listentry caption="No, just start my media center" step="end" />
+		</list>
+		<code>
+self.clearSelectedKeys()
+self.selectKey("OK")
+		</code>
+	</step>
+	<step id="selectstorage">
+		<text value="Please select drive to install or use the default settings for the storage devices.\n\nPlease press OK to continue." />
+		<displaytext value="Select storage device" />
+		<list type="dynamic" source="listDevices" evaluation="deviceSelectionMade" onselect="deviceSelectionMoved" />
+		<code>
+self.clearSelectedKeys()
+self.selectKey("OK")
+self.selectKey("UP")
+self.selectKey("DOWN")
+		</code>
+		<code pos="after" async="yes">
+self.nextAction(self.selectedDevice)
+		</code>
+	</step>
+	<step id="storageconfig" nextstep="storageconfigend">
+		<condition>
+self.condition = (self.selectedDevice is not None)
+		</condition>
+		<text value="Please configure your storage device by filling out the required values and press OK to continue." />
+		<displaytext value="Configure storage device" />
+		<config screen="StorageDeviceSetup" module="StorageDeviceSetup" args="(self.selectedDevice)" type="ConfigList" />
+		<code>
+self.clearSelectedKeys()
+self.selectKey("OK")
+self.selectKey("UP")
+self.selectKey("DOWN")
+self.selectKey("LEFT")
+self.selectKey("RIGHT")
+		</code>
+	</step>
+	<step id="storageconfigend">
+		<text value="Please choose what you want to do next." />
+		<displaytext value="Please follow the instructions on the TV" />
+		<code>
+self.clearSelectedKeys()
+self.selectKey("OK")
+self.selectKey("UP")
+self.selectKey("DOWN")
+		</code>
+		<list>
+			<listentry caption="Choose a new storage devices to configure" step="selectstorage" />
+			<listentry caption="Exit storage devices wizard" step="end" />
+		</list>
+	</step>
+	<step id="factoryquestion">
+		<text value="Do you really want factory settings for storage devices?\nYou will then need to reboot your media center!" />
+		<list>
+			<listentry caption="Yes, factory settings for storage devices" step="factory" />
+			<listentry caption="No, do nothing" step="selectstorage" />
+		</list>
+	</step>
+	<step id="factory">
+		<text value="Your media center will restart after pressing OK on your remote control." />
+		<code>
+from os import system as os_system, path as os_path, remove as os_remove, makedirs as os_makedirs
+from Components.Harddisk import harddiskmanager
+harddiskmanager.removeStaticMount('/media/hdd')
+harddiskmanager.removeStaticMount('/media/usb')
+harddiskmanager.removeStaticMount('/media/cf')
+harddiskmanager.removeStaticMount('/usr')
+if os_path.islink('/media/hdd'):
+	os_remove('/media/hdd')
+	os_makedirs('/media/hdd')
+self.rebootNotConfirmed()
+		</code>
+		<list>
+			<listentry caption="Yes, perform a reboot now" step="reboot" />
+		</list>
+	</step>
+	<step id="rebootquestion">
+		<text value="Your media center will restart after pressing OK on your remote control." />
+		<list>
+			<listentry caption="Yes, perform a reboot now" step="reboot" />
+		</list>
+	</step>
+	<step id="reboot">
+		<code>
+self.rebootNotConfirmed()
+		</code>
+		<text value="Your media centre is reboot..." />
+	</step>
+	<step id="end" laststep="true">
+		<text value="The wizard is finished now." />
+	</step>
+</wizard>
